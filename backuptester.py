@@ -7,6 +7,18 @@ import dateparser
 import smtplib
 import ssl
 import string
+import requests
+
+
+def sendSMS(plan_id, api_token, number_from, number_to, message):
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(plan_id),
+        'Content-Type': 'application/json',
+    }
+
+    data = '\n  {{\n   "from": "{0}",\n   "to": [ "{1}" ],\n  "body": "{2}"\n  }}'.format(number_from, number_to, message)
+    response = requests.post('https://sms.api.sinch.com/xms/v1/{0}/batches'.format(api_token), headers=headers, data=data)
 
 def DoCheck(dir, rls, r):
     now = datetime.datetime.now()
@@ -81,6 +93,8 @@ def start():
 
 
     if errors:
+        # send email
+
         _DEFAULT_CIPHERS = ('ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES:!aNULL:!eNULL:!MD5')
         smtp_server = smtplib.SMTP(config['global']['smtp'], port=str(config['global']['smtp_port']))
 
@@ -107,10 +121,17 @@ def start():
             ), "\r\n")            
 
         smtp_server.sendmail(config['global']['from'],config['global']['to'], BODY)
-        #smtp_server.sendmail("dragan@draganmatic.com", ["dragan@draganmatic.com"], BODY)
+
+        # send sms
+
+        sendSMS(config['sms']['plan_id'], 
+            config['sms']['api_token'], 
+            config['sms']['number_from'], 
+            config['sms']['number_to'], 'error in backup')
 
     f.close()
 
 
 if __name__ == "__main__":
     start()
+
