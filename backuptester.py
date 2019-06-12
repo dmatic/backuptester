@@ -8,6 +8,20 @@ import smtplib
 import ssl
 import string
 import requests
+import sys
+
+sendsms = False
+configfile = "backuptester.ini"
+silent = False
+
+
+for arg in sys.argv:
+    if arg == "sendsms":
+        sendsms = True
+    elif arg == "silent":
+        silent = True
+    elif arg[:11] == "configfile:":
+        configfile = arg[11:]
 
 
 def sendSMS(plan_id, api_token, number_from, number_to, message):
@@ -66,7 +80,7 @@ def DoCheck(dir, rls, r):
 
 def start():
     config = configparser.ConfigParser()
-    config.read("backuptester.ini")
+    config.read(configfile)
 
     directories = []
 
@@ -112,26 +126,38 @@ def start():
         smtp_server.login(config['global']['smtp_login'], config['global']['smtp_password'])
 
 
-        BODY = string.join((
+        BODY = "\r\n".join((
             "From: %s" % config['global']['from'],
             "To: %s" % config['global']['to'],
             "Subject: %s" % "backup errors" ,
             "",
             str(errors)
-            ), "\r\n")            
+            ))
 
         smtp_server.sendmail(config['global']['from'],config['global']['to'], BODY)
 
         # send sms
 
-        sendSMS(config['sms']['plan_id'], 
-            config['sms']['api_token'], 
-            config['sms']['number_from'], 
-            config['sms']['number_to'], 'error in backup')
+        if sendsms:
+            sendSMS(config['sms']['plan_id'], 
+                config['sms']['api_token'], 
+                config['sms']['number_from'], 
+                config['sms']['number_to'], 'error in backup')
+
+        if not silent:            
+            print("❌ There were errors")
+            for error in errors:
+                print(error)
+
+    else:
+        if not silent:            
+            print("✅ Everything ok")
+
 
     f.close()
 
 
 if __name__ == "__main__":
+
     start()
 
