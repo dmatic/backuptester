@@ -1,6 +1,5 @@
 import configparser
 import json
-import glob
 import os
 import datetime
 import dateparser
@@ -9,6 +8,7 @@ import ssl
 import string
 import requests
 import sys
+from pathlib import Path
 
 sendsms = False
 configfile = "backuptester.ini"
@@ -33,6 +33,7 @@ def sendSMS(plan_id, api_token, number_from, number_to, message):
 
     data = '\n  {{\n   "from": "{0}",\n   "to": [ "{1}" ],\n  "body": "{2}"\n  }}'.format(number_from, number_to, message)
     response = requests.post('https://sms.api.sinch.com/xms/v1/{0}/batches'.format(api_token), headers=headers, data=data)
+    print(response)
 
 def DoCheck(dir, rls, r):
     now = datetime.datetime.now()
@@ -47,9 +48,8 @@ def DoCheck(dir, rls, r):
         flist = rules["file"]
 
     for f in flist:
-
-        files = glob.glob(os.path.join(dir, f))
-
+        files = Path(dir).glob('**/' + f)
+        
         if not files:        	
             r.write("{0}\n".format(json.dumps({"file": os.path.join(dir, f), "ok": False, "rule": rules["time"], "size": str(0), "date": "",})))
             errors.append({"file": os.path.join(dir, f), "ok": False, "rule": rules["time"], "size": str(0), "date": "",})
@@ -57,21 +57,22 @@ def DoCheck(dir, rls, r):
             for file in files:
                 ok = False
                 if now - datetime.datetime.fromtimestamp(os.path.getmtime(file)) < now - dateparser.parse(rules["time"]):
+                    
                     ok = True
-                    if rules["rule"] == "some":
+                    if rules["rule"] == "any":
                         break
 
                 if rules["rule"] == "all":
                     if ok == False:
-                        errors.append({"file": file, "ok": ok, "rule": rules["time"], 
+                        errors.append({"file": str(file), "ok": ok, "rule": rules["time"], 
                             "size": str(os.stat(file).st_size), "date": str(datetime.datetime.fromtimestamp(os.path.getmtime(file))),})
-
-                    r.write("{0}\n".format(json.dumps({"file": file, "ok": ok, "rule": rules["time"], 
+                    
+                    r.write("{0}\n".format(json.dumps({"file": str(file), "ok": ok, "rule": rules["time"], 
                         "size": str(os.stat(file).st_size), "date": str(datetime.datetime.fromtimestamp(os.path.getmtime(file))),})))
 
 
 
-            if rules["rule"] == "some":
+            if rules["rule"] == "any":
                 r.write("{0}\n".format(json.dumps({"file": os.path.join(dir, f),"ok": ok,"rule": rules["time"],})))
                 if ok == False:
                 	errors.append({"file": os.path.join(dir, f),"ok": ok,"rule": rules["time"],})
