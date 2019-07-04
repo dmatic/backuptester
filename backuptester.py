@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import configparser
 import json
 import os
@@ -56,7 +57,7 @@ def DoCheck(dir, rls, r):
         else:
             for file in files:
                 ok = False
-                if now - datetime.datetime.fromtimestamp(os.path.getmtime(file)) < now - dateparser.parse(rules["time"]):
+                if now - datetime.datetime.fromtimestamp(os.path.getmtime(str(file))) < now - dateparser.parse(rules["time"]):
                     
                     ok = True
                     if rules["rule"] == "any":
@@ -65,10 +66,10 @@ def DoCheck(dir, rls, r):
                 if rules["rule"] == "all":
                     if ok == False:
                         errors.append({"file": str(file), "ok": ok, "rule": rules["time"], 
-                            "size": str(os.stat(file).st_size), "date": str(datetime.datetime.fromtimestamp(os.path.getmtime(file))),})
+                            "size": str(os.stat(str(file)).st_size), "date": str(datetime.datetime.fromtimestamp(os.path.getmtime(str(file)))),})
                     
                     r.write("{0}\n".format(json.dumps({"file": str(file), "ok": ok, "rule": rules["time"], 
-                        "size": str(os.stat(file).st_size), "date": str(datetime.datetime.fromtimestamp(os.path.getmtime(file))),})))
+                        "size": str(os.stat(str(file)).st_size), "date": str(datetime.datetime.fromtimestamp(os.path.getmtime(str(file)))),})))
 
 
 
