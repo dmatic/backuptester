@@ -144,7 +144,7 @@ def start():
             sendSMS(config['sms']['plan_id'], 
                 config['sms']['api_token'], 
                 config['sms']['number_from'], 
-                config['sms']['number_to'], 'error in backup')
+                config['sms']['number_to'], ['sms']['message'])
 
         if not silent:            
             print("❌ There were errors")
